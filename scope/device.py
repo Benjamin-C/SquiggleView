@@ -5,6 +5,7 @@ class Device():
         self._simulated = False
         if address is None:
             self._simulated = True
+        self.cache = {}
         self._address = address
         self._port = port
         self._debug = debug

@@ -11,20 +11,20 @@ class Channel():
         self.__allowedCouple = {"A1M", "D1M", "GND"}
         self.__allowedUnits = {"A", "V"}
 
-        # Current parameters. Use for sim only
-        self.__params = {}
-        self.__params["ATTENUATION"] = 10
-        self.__params["COUPLING"] = "D1M"
-        self.__params["OFFSET"] = 0
-        self.__params["VOLT_DIV"] = 1.0
-        self.__params["UNIT"] = "V"
-        self.__params["BANDWIDTH_LIMIT"] = False
-
+        self.__default_param = {
+            "ATTENUATION": 10,
+            "COUPLING": "D1M",
+            "OFFSET": 0,
+            "VOLT_DIV": 1.0,
+            "UNIT": "V",
+            "BANDWIDTH_LIMIT": False
+        }
+        
         self.__parammap = {"ATTN": "ATTENUATION", "CPL": "COUPLING", "OFST": "OFFSET", "VDIV": "VOLT_DIV", "UNIT": "UNIT", "BWL": "BANDWIDTH_LIMIT"}
 
         if not scope._simulated:
             qstr = ""
-            for key in self.__params.keys():
+            for key in self.__parammap.keys():
                 qstr += f"C{self.id}:{key}?\n"
             ans = self.__scope.query(qstr)
             for line in ans.splitlines():
@@ -37,11 +37,18 @@ class Channel():
                     v = float(v[:-1])
                 elif k == "BANDWIDTH_LIMIT":
                     v = v == "ON"
-                self.__params[k] = v
+                self.setCache(k, v)
                 self.informValueListeners(k, v)
+        else:
+            for key in self.__parammap.keys():
+               self.setCache(key, self.__parammap[key])
 
     def getCache(self, key):
-        return self.__params[key]
+        return self.__scope.cache[f"C{self.id}:{key}"]
+    
+    def setCache(self, key, value):
+        self.__scope.cache[f"C{self.id}:{key}"] = value
+
 
     def _cmd(self, cmd: str):
         ''' Sends a command to the oscilloscope regarding this channel.
@@ -67,7 +74,7 @@ class Channel():
             source: The source of the request to be passed to listeners '''
         value = None
         if self.__scope._simulated:
-            value = self.__params[field]
+            value = self.getCache(field)
         else:
             value = self._query(field + "?").split(" ")[1]
         if valType == "number":
@@ -79,7 +86,7 @@ class Channel():
         ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
         self.informValueListeners(field, value, source)
         if self.__scope._simulated:
-            self.__params[field] = value
+            value = self.setCache(field, value)
         else:
             self._cmd(field + " " + str(value))
 
@@ -110,13 +117,13 @@ class Channel():
     def setBWLimit(self, limit: bool = True, source: any = None):
         self.informValueListeners("BANDWIDTH_LIMIT", limit, source)
         if self.__scope._simulated:
-            self.__params["BANDWIDTH_LIMIT"] = limit
+            self.setCache("BANDWIDTH_LIMIT", limit)
         else:
             self.__scope.cmd_onoff(f"BANDWIDTH_LIMIT C{self.id},", limit)
 
     def getBWLimit(self):
         if self.__scope._simulated:
-            return self.__params
+            return self.getCache("BANDWIDTH_LIMIT")
         return self.__scope.query_onoff(f"C{self.id}:BANDWIDTH_LIMIT?")
     
     def getCoupling(self):
