@@ -25,50 +25,17 @@ class Channel():
         self.__scope.param[f"C{id}:VOLT_DIV"]        = Parameter(default=1.0,   retype=lambda s: float(s[:-1]))
         self.__scope.param[f"C{id}:UNIT"]            = Parameter(default="V",   retype=str)
         self.__scope.param[f"C{id}:BANDWIDTH_LIMIT"] = Parameter(default=False, retype=lambda s: s == True or s == "ON", sender=lambda s: "ON" if bool(s) else "OFF")
-
-    # def _cmd(self, cmd: str):
-    #     ''' Sends a command to the oscilloscope regarding this channel.
-        
-    #     Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _query() if you want to get the result of the command. '''
-    #     if not self.__scope._simulated:
-    #         self.__scope.cmd(f"C{self.id}:" + cmd)
-
-    # def _query(self, cmd: str):
-    #     ''' Queries the oscilloscope for a value from this channel and waits for the result.
-        
-    #     Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _cmd() if you do not want to wait for any result. '''
-    #     return self.__scope.query(f"C{self.id}:" + cmd)
     
     def getCache(self, name: str):
         return self.__scope.param[f"C{self.id}:{name}"].value
 
-    def getVal(self, name: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
-        ''' Gets a value for this channel from the oscilloscope.
-        
-        If the scope is real, the scope is asked for the value and the reply is returned.
-        If the scope is simulated the previously set value is returned
-        
-        Args:
-            name: The name of the name to get
-            source: The source of the request to be passed to listeners '''
-        # value = None
-        # if self.__scope._simulated:
-        #     value = self.getCache(name)
-        # else:
-        #     value = self._query(name + "?").split(" ")[1]
-        # if valType == "number":
-        #     value = float(value[:-valSuffix])
-        # self.informValueListeners(name, value, source)
+    def getVal(self, name: str, source: any = "getVal") -> any:
+        ''' Gets a value for this channel from the oscilloscope. '''
         k,v = self.__scope.getParam("C{self.id}:{name}")
         return v
         
     def setVal(self, field: str, value: any, source: any = None):
         ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
-        # self.informValueListeners(field, value, source)
-        # if self.__scope._simulated:
-        #     value = self.setCache(field, value)
-        # else:
-        #     self._cmd(field + " " + str(value))
         self.__scope.setParam(f"C{self.id}:{field}", value)
     
     def getAtten(self, source: any = None):
@@ -81,12 +48,6 @@ class Channel():
             raise ValueError(str(atten) + " is not a valid attenuation")
         
     def setBWLimit(self, limit: bool = True, source: any = None):
-        # self.informValueListeners("BANDWIDTH_LIMIT", limit, source)
-        # if self.__scope._simulated:
-        #     self.setCache("BANDWIDTH_LIMIT", limit)
-        # else:
-        #     self.__scope.cmd_onoff(f"BANDWIDTH_LIMIT C{self.id},", limit)
-
         paramName = f"C{self.id}:BANDWIDTH_LIMIT"
         self.__scope.setParam(paramName, limit, extSend=True)
         if not self.__scope._simulated:
