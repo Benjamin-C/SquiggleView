@@ -1,5 +1,7 @@
 from scope.device import Device
 
+from scope.parameter import Parameter
+
 class Channel():
     def __init__(self, scope: Device, id: int):
         self.id = id    
@@ -11,98 +13,64 @@ class Channel():
         self.__allowedCouple = {"A1M", "D1M", "GND"}
         self.__allowedUnits = {"A", "V"}
 
-        self.__default_param = {
-            "ATTENUATION": 10,
-            "COUPLING": "D1M",
-            "OFFSET": 0,
-            "VOLT_DIV": 1.0,
-            "UNIT": "V",
-            "BANDWIDTH_LIMIT": False
-        }
+        self.__scope.alts[f"C{id}:ATTN"] = f"C{id}:ATTENUATION"
+        self.__scope.alts[f"C{id}:CPL"]  = f"C{id}:COUPLING"
+        self.__scope.alts[f"C{id}:OFST"] = f"C{id}:OFFSET"
+        self.__scope.alts[f"C{id}:VDIV"] = f"C{id}:VOLT_DIV"
+        self.__scope.alts[f"C{id}:UNIT"] = f"C{id}:UNIT"
+        self.__scope.alts[f"C{id}:BWL"]  = f"C{id}:BANDWIDTH_LIMIT"
+
+        self.__scope.param[f"C{id}:ATTENUATION"]     = Parameter(default=10,    retype=float, sender=lambda s: f"{s:g}")
+        self.__scope.param[f"C{id}:COUPLING"]        = Parameter(default="D1M", retype=str)
+        self.__scope.param[f"C{id}:OFFSET"]          = Parameter(default=0,     retype=lambda s: float(s[:-1]))
+        self.__scope.param[f"C{id}:VOLT_DIV"]        = Parameter(default=1.0,   retype=lambda s: float(s[:-1]))
+        self.__scope.param[f"C{id}:UNIT"]            = Parameter(default="V",   retype=str)
+        self.__scope.param[f"C{id}:BANDWIDTH_LIMIT"] = Parameter(default=False, retype=lambda s: s == True or s == "ON", sender=lambda s: "ON" if bool(s) else "OFF")
+
+    # def _cmd(self, cmd: str):
+    #     ''' Sends a command to the oscilloscope regarding this channel.
         
-        self.__parammap = {"ATTN": "ATTENUATION", "CPL": "COUPLING", "OFST": "OFFSET", "VDIV": "VOLT_DIV", "UNIT": "UNIT", "BWL": "BANDWIDTH_LIMIT"}
+    #     Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _query() if you want to get the result of the command. '''
+    #     if not self.__scope._simulated:
+    #         self.__scope.cmd(f"C{self.id}:" + cmd)
 
-        if not scope._simulated:
-            qstr = ""
-            for key in self.__parammap.keys():
-                qstr += f"C{self.id}:{key}?\n"
-            ans = self.__scope.query(qstr)
-            for line in ans.splitlines():
-                k, v = line.split(":")[1].split(" ")
-                k = self.__parammap[k]
-                print("WHATIS", k, v)
-                if k in ["ATTENUATION"]:
-                    v = float(v)
-                if k in ["OFFSET", "VOLT_DIV"]:
-                    v = float(v[:-1])
-                elif k == "BANDWIDTH_LIMIT":
-                    v = v == "ON"
-                self.setCache(k, v)
-                self.informValueListeners(k, v)
-        else:
-            for key in self.__parammap.keys():
-               self.setCache(key, self.__parammap[key])
-
-    def getCache(self, key):
-        return self.__scope.cache[f"C{self.id}:{key}"]
+    # def _query(self, cmd: str):
+    #     ''' Queries the oscilloscope for a value from this channel and waits for the result.
+        
+    #     Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _cmd() if you do not want to wait for any result. '''
+    #     return self.__scope.query(f"C{self.id}:" + cmd)
     
-    def setCache(self, key, value):
-        self.__scope.cache[f"C{self.id}:{key}"] = value
+    def getCache(self, name: str):
+        return self.__scope.param[f"C{self.id}:{name}"].value
 
-    def _cmd(self, cmd: str):
-        ''' Sends a command to the oscilloscope regarding this channel.
-        
-        Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _query() if you want to get the result of the command. '''
-        if not self.__scope._simulated:
-            self.__scope.cmd(f"C{self.id}:" + cmd)
-
-    def _query(self, cmd: str):
-        ''' Queries the oscilloscope for a value from this channel and waits for the result.
-        
-        Commands are prepended with the channel number, so only use this for channel specific commands in the form `C#:CMD ...`. Use _cmd() if you do not want to wait for any result. '''
-        return self.__scope.query(f"C{self.id}:" + cmd)
-    
-    def getVal(self, field: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
+    def getVal(self, name: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
         ''' Gets a value for this channel from the oscilloscope.
         
         If the scope is real, the scope is asked for the value and the reply is returned.
         If the scope is simulated the previously set value is returned
         
         Args:
-            field: The name of the field to get
+            name: The name of the name to get
             source: The source of the request to be passed to listeners '''
-        value = None
-        if self.__scope._simulated:
-            value = self.getCache(field)
-        else:
-            value = self._query(field + "?").split(" ")[1]
-        if valType == "number":
-            value = float(value[:-valSuffix])
-        self.informValueListeners(field, value, source)
-        return value
+        # value = None
+        # if self.__scope._simulated:
+        #     value = self.getCache(name)
+        # else:
+        #     value = self._query(name + "?").split(" ")[1]
+        # if valType == "number":
+        #     value = float(value[:-valSuffix])
+        # self.informValueListeners(name, value, source)
+        k,v = self.__scope.getParam("C{self.id}:{name}")
+        return v
         
     def setVal(self, field: str, value: any, source: any = None):
         ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
-        self.informValueListeners(field, value, source)
-        if self.__scope._simulated:
-            value = self.setCache(field, value)
-        else:
-            self._cmd(field + " " + str(value))
-
-    def informValueListeners(self, field: str, value: any, source: any = None):
-        ''' Informs all listeners of a change to a value
-        
-        This change could be either from a call to getVal or setVal.
-        It is up to the listener to use source ignore any updates made by itself.
-        
-        Args:
-            field: The field name that was updated
-            value: The new value of that field
-            source: What triggered the update, or None if none was specified
-        '''
-        if len(self.valueChangeListeners) > 0:
-            for vud in self.valueChangeListeners:
-                vud(field, value, source)
+        # self.informValueListeners(field, value, source)
+        # if self.__scope._simulated:
+        #     value = self.setCache(field, value)
+        # else:
+        #     self._cmd(field + " " + str(value))
+        self.__scope.setParam(f"C{self.id}:{field}", value)
     
     def getAtten(self, source: any = None):
         return self.getVal("ATTENUATION")
@@ -114,11 +82,16 @@ class Channel():
             raise ValueError(str(atten) + " is not a valid attenuation")
         
     def setBWLimit(self, limit: bool = True, source: any = None):
-        self.informValueListeners("BANDWIDTH_LIMIT", limit, source)
-        if self.__scope._simulated:
-            self.setCache("BANDWIDTH_LIMIT", limit)
-        else:
-            self.__scope.cmd_onoff(f"BANDWIDTH_LIMIT C{self.id},", limit)
+        # self.informValueListeners("BANDWIDTH_LIMIT", limit, source)
+        # if self.__scope._simulated:
+        #     self.setCache("BANDWIDTH_LIMIT", limit)
+        # else:
+        #     self.__scope.cmd_onoff(f"BANDWIDTH_LIMIT C{self.id},", limit)
+
+        paramName = f"C{self.id}:BANDWIDTH_LIMIT"
+        self.__scope.setParam(paramName, limit, extSend=True)
+        if not self.__scope._simulated:
+            self.__scope.cmd(f"BANDWIDTH_LIMIT C{self.id},{self.__scope.param[paramName].getSendValue()}")
 
     def getBWLimit(self):
         if self.__scope._simulated:

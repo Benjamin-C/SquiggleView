@@ -17,6 +17,7 @@ app.processEvents()
 app.processEvents()
 
 with Oscilloscope(addr, debug=True) as scope:
+# with Oscilloscope(None, debug=True) as scope:
     print("Go!")
     
     # file_name = input("Please enter a filename: ") + ".png"

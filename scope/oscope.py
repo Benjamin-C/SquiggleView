@@ -15,11 +15,15 @@ class Oscilloscope(Device):
             print(str)
 
     def __enter__(self):
+        print("enter")
         if not self._simulated:
+            print("calling super")
             super().__enter__()
+            print("Calling connect")
             self.__connect()
         else:
             self.__connect_sim()
+        super()._populateCache()
         return self
 
     def __exit__(self, exceptionType, exceptionValue, exceptionTraceback):
@@ -32,6 +36,7 @@ class Oscilloscope(Device):
             self.channel.append(Channel(self, i+1))
 
     def __connect(self):
+        print("Connecting")
         # Confirm that we are on an SDS2104
         ans = self.query("*idn?")
         try:
@@ -103,18 +108,46 @@ class Oscilloscope(Device):
         else:
             raise ValueError("You must specify either min and max frequencies, or center and span")
         
-    def cmd_yn(self, cmd: str, yn: bool):
-        self.cmd(cmd + (" YES" if yn else " NO"))
+    # def cmd_yn(self, cmd: str, yn: bool):
+    #     self.cmd(cmd + (" YES" if yn else " NO"))
 
-    def cmd_onoff(self, cmd: str, onoff: bool):
-        self.cmd(cmd + (" ON" if onoff else " OFF"))
+    # def cmd_onoff(self, cmd: str, onoff: bool):
+    #     self.cmd(cmd + (" ON" if onoff else " OFF"))
 
-    def query_yn(self, cmd: str) -> bool:
-        return self.query(cmd).split(" ")[1] == "YES"
+    # def query_yn(self, cmd: str) -> bool:
+    #     return self.query(cmd).split(" ")[1] == "YES"
     
-    def query_onoff(self, cmd: str) -> bool:
-        return self.query(cmd).split(" ")[1] == "ON"
+    # def query_onoff(self, cmd: str) -> bool:
+    #     return self.query(cmd).split(" ")[1] == "ON"
     
+    # def getVal(self, field: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
+    #     ''' Gets a value for this channel from the oscilloscope.
+        
+    #     If the scope is real, the scope is asked for the value and the reply is returned.
+    #     If the scope is simulated the previously set value is returned
+        
+    #     Args:
+    #         field: The name of the field to get
+    #         source: The source of the request to be passed to listeners '''
+    #     value = None
+    #     if self._simulated:
+    #         value = self.cache[field]
+    #     else:
+    #         value = self.query(field + "?").split(" ")[1]
+    #     if valType == "number":
+    #         value = float(value[:-valSuffix])
+    #     self.informValueListeners(field, value, source)
+    #     return value
+        
+    # def setVal(self, field: str, value: any, source: any = None):
+    #     ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
+    #     self.informValueListeners(field, value, source)
+    #     if self._simulated:
+    #         value = self.cache[field] = value
+    #     else:
+    #         self.cmd(field + " " + str(value))
+
+    # Channels
     def ch(self, ch: int) -> Channel:
         if 0 < ch <= len(self.channel):
             return self.channel[ch-1]
@@ -123,30 +156,3 @@ class Oscilloscope(Device):
         
     def channelCount(self):
         return len(self.channel)
-    
-    def getVal(self, field: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
-        ''' Gets a value for this channel from the oscilloscope.
-        
-        If the scope is real, the scope is asked for the value and the reply is returned.
-        If the scope is simulated the previously set value is returned
-        
-        Args:
-            field: The name of the field to get
-            source: The source of the request to be passed to listeners '''
-        value = None
-        if self._simulated:
-            value = self.cache[field]
-        else:
-            value = self.query(field + "?").split(" ")[1]
-        if valType == "number":
-            value = float(value[:-valSuffix])
-        self.informValueListeners(field, value, source)
-        return value
-        
-    def setVal(self, field: str, value: any, source: any = None):
-        ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
-        self.informValueListeners(field, value, source)
-        if self._simulated:
-            value = self.cache[field] = value
-        else:
-            self.cmd(field + " " + str(value))

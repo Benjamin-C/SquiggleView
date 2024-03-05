@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         for i in range(self.scope.channelCount()):
             ch = self.scope.ch(i+1)
             cr = ChannelGUI(ch)
-            ch.valueChangeListeners.append(cr.onChannelUpdate)
+            scope.valueChangeListeners.append(cr.onChannelUpdate)
             layout.addWidget(cr)
 
         sc = ScreenshotGUI(scope)

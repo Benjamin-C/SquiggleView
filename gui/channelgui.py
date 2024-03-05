@@ -114,15 +114,15 @@ class ChannelGUI(QWidget):
 
     def onChannelUpdate(self, field, value, source):
         # print("Time to update " + field + " to " + str(value))
-        if field == "VOLT_DIV":
+        if field == f"{self.scopech.id}:VOLT_DIV":
             self.scale.setValue(float(value))
-        elif field == "OFFSET":
+        elif field == f"{self.scopech.id}:OFFSET":
             self.offset.setValue(float(value))
-        elif field == "UNIT":
+        elif field == f"{self.scopech.id}:UNIT":
             self.unit.setCurrentText(str(value))
-        elif field == "ATTENUATION":
+        elif field == f"{self.scopech.id}:ATTENUATION":
             self.atten.setCurrentText(str(value))
-        elif field == "BANDWIDTH_LIMIT":
+        elif field == f"{self.scopech.id}:BANDWIDTH_LIMIT":
             self.bandwidth.setChecked(bool(value))
-        elif field == "COUPLING":
+        elif field == f"{self.scopech.id}:COUPLING":
             self.coupling.setCurrentText(str(value))
