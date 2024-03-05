@@ -1,3 +1,5 @@
+#!/bin/python3
+
 from scope.oscope import Oscilloscope
 
 from PyQt6.QtWidgets import QApplication, QSplashScreen

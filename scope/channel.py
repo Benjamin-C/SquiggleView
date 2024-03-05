@@ -49,7 +49,6 @@ class Channel():
     def setCache(self, key, value):
         self.__scope.cache[f"C{self.id}:{key}"] = value
 
-
     def _cmd(self, cmd: str):
         ''' Sends a command to the oscilloscope regarding this channel.
         

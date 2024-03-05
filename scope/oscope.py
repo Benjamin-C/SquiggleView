@@ -123,3 +123,30 @@ class Oscilloscope(Device):
         
     def channelCount(self):
         return len(self.channel)
+    
+    def getVal(self, field: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
+        ''' Gets a value for this channel from the oscilloscope.
+        
+        If the scope is real, the scope is asked for the value and the reply is returned.
+        If the scope is simulated the previously set value is returned
+        
+        Args:
+            field: The name of the field to get
+            source: The source of the request to be passed to listeners '''
+        value = None
+        if self._simulated:
+            value = self.cache[field]
+        else:
+            value = self.query(field + "?").split(" ")[1]
+        if valType == "number":
+            value = float(value[:-valSuffix])
+        self.informValueListeners(field, value, source)
+        return value
+        
+    def setVal(self, field: str, value: any, source: any = None):
+        ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
+        self.informValueListeners(field, value, source)
+        if self._simulated:
+            value = self.cache[field] = value
+        else:
+            self.cmd(field + " " + str(value))
