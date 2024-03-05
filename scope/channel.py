@@ -17,7 +17,6 @@ class Channel():
         self.__scope.alts[f"C{id}:CPL"]  = f"C{id}:COUPLING"
         self.__scope.alts[f"C{id}:OFST"] = f"C{id}:OFFSET"
         self.__scope.alts[f"C{id}:VDIV"] = f"C{id}:VOLT_DIV"
-        self.__scope.alts[f"C{id}:UNIT"] = f"C{id}:UNIT"
         self.__scope.alts[f"C{id}:BWL"]  = f"C{id}:BANDWIDTH_LIMIT"
 
         self.__scope.param[f"C{id}:ATTENUATION"]     = Parameter(default=10,    retype=float, sender=lambda s: f"{s:g}")

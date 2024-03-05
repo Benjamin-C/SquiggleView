@@ -3,12 +3,15 @@ from PIL import Image
 from io import BytesIO
 from scope.device import Device
 from scope.channel import Channel
+from scope.parameter import Parameter
 
 class Oscilloscope(Device):
     def __init__(self, address: str | None, debug: bool = False, chcount: int = 4):
         super().__init__(address, 5025, debug)
         self.__simchcount = chcount
         self.channel = []
+
+        self.__scope.param[f"MENU"] = Parameter(default=True, retype=lambda s: s == True or s == "ON", sender=lambda s: "ON" if bool(s) else "OFF")
 
     def __dbg(self, str):
         if self._debug:
@@ -63,7 +66,7 @@ class Oscilloscope(Device):
         else:
             try:
                 if hidemenu:
-                    self.menu(False)
+                    self.setMenu(False)
                     time.sleep(0.1)
                 bfs = 0
                 buff = BytesIO()
@@ -82,14 +85,6 @@ class Oscilloscope(Device):
                     return self.screenshot(hidemenu, retry-1)
                 else:
                     raise e
-
-    
-    def menu(self, on: bool = False):
-        if not self._simulated:
-            self.query("MENU " + ("ON" if on else "OFF") + "\nMENU?")
-
-    def getErrors(self):
-        return self.query("CMR?")
     
     def setupFFTHoriz(self, min : float | None = None, max : float | None = None, center : float | None = None, span : float | None = None):
         ''' Sets the range of the FFT. Uses min and max freqs if they are supplied.'''
@@ -107,45 +102,6 @@ class Oscilloscope(Device):
             self.cmd(f"FFT_CENTER {center:g}")
         else:
             raise ValueError("You must specify either min and max frequencies, or center and span")
-        
-    # def cmd_yn(self, cmd: str, yn: bool):
-    #     self.cmd(cmd + (" YES" if yn else " NO"))
-
-    # def cmd_onoff(self, cmd: str, onoff: bool):
-    #     self.cmd(cmd + (" ON" if onoff else " OFF"))
-
-    # def query_yn(self, cmd: str) -> bool:
-    #     return self.query(cmd).split(" ")[1] == "YES"
-    
-    # def query_onoff(self, cmd: str) -> bool:
-    #     return self.query(cmd).split(" ")[1] == "ON"
-    
-    # def getVal(self, field: str, source: any = "getVal", valType: str = None, valSuffix: int = 1) -> any:
-    #     ''' Gets a value for this channel from the oscilloscope.
-        
-    #     If the scope is real, the scope is asked for the value and the reply is returned.
-    #     If the scope is simulated the previously set value is returned
-        
-    #     Args:
-    #         field: The name of the field to get
-    #         source: The source of the request to be passed to listeners '''
-    #     value = None
-    #     if self._simulated:
-    #         value = self.cache[field]
-    #     else:
-    #         value = self.query(field + "?").split(" ")[1]
-    #     if valType == "number":
-    #         value = float(value[:-valSuffix])
-    #     self.informValueListeners(field, value, source)
-    #     return value
-        
-    # def setVal(self, field: str, value: any, source: any = None):
-    #     ''' Sets a value for the channel on the oscilloscope and notifies any listeners '''
-    #     self.informValueListeners(field, value, source)
-    #     if self._simulated:
-    #         value = self.cache[field] = value
-    #     else:
-    #         self.cmd(field + " " + str(value))
 
     # Channels
     def ch(self, ch: int) -> Channel:
@@ -156,3 +112,9 @@ class Oscilloscope(Device):
         
     def channelCount(self):
         return len(self.channel)
+    
+    def getMenu(self):
+        return self.getParam("MENU")
+
+    def setMenu(self, on: bool = False):
+        self.setParam("MENU", on)
