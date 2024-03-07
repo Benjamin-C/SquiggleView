@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from scope.oscope import Oscilloscope
 from gui.screenshot import ScreenshotGUI
 
+from gui.triggergui import TriggerGUI
 from gui.channelgui import ChannelGUI
 
 class MainWindow(QMainWindow):
@@ -14,6 +15,9 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         # Create a layout
         layout = QVBoxLayout()
+
+        trigger = TriggerGUI(scope.trigger)
+        layout.addWidget(trigger)
 
         for i in range(self.scope.channelCount()):
             ch = self.scope.ch(i+1)

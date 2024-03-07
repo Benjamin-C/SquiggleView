@@ -27,7 +27,7 @@ with Oscilloscope(addr, debug=True) as scope:
 
     # print(scope.ch(1).getBWLimit())
 
-    scope.menu(False)
+    scope.setMenu(False)
 
     # print("Settling before screenshot ... ")
     # time.sleep(5)

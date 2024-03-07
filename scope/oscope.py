@@ -2,6 +2,7 @@ import time
 from PIL import Image
 from io import BytesIO
 from scope.device import Device
+from scope.trigger import Trigger
 from scope.channel import Channel
 from scope.parameter import Parameter
 
@@ -11,7 +12,7 @@ class Oscilloscope(Device):
         self.__simchcount = chcount
         self.channel = []
 
-        self.__scope.param[f"MENU"] = Parameter(default=True, retype=lambda s: s == True or s == "ON", sender=lambda s: "ON" if bool(s) else "OFF")
+        self.param[f"MENU"] = Parameter(default=True, retype=lambda s: s == True or s == "ON", sender=lambda s: "ON" if bool(s) else "OFF")
 
     def __dbg(self, str):
         if self._debug:
@@ -53,12 +54,14 @@ class Oscilloscope(Device):
         if(self.brand != "Siglent Technologies" or self.model != "SDS1204X-E"):
             raise ValueError("Scope model " + self.brand + " " + self.model + " is not supported")
         print("Connected to " + self.brand + " " + self.model)
-        # Get scope capabilities
+        # Get scope channels
         ans = self.query("CHS?").split(" ")
         self.channel = []
         print(ans)
         for i in range(int(ans[1])):
             self.channel.append(Channel(self, i+1))
+        # Get scope trigger
+        self.trigger = Trigger(self)
 
     def screenshot(self, hidemenu: bool = False, retry = 1) -> Image:
         if self._simulated:
