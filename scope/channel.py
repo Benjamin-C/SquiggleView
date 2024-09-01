@@ -80,6 +80,7 @@ class Channel():
     
     def setScale(self, vdiv, source: any = None):
         self.setVal("VOLT_DIV", vdiv, source)
+        self.__scope.cmd("$$SY_FP 35,0")
 
     def getScale(self):
         return self.getVal("VOLT_DIV")
